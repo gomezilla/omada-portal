@@ -2,64 +2,122 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Omada Portal Login</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Omada Voucher Portal</title>
   <style>
-    body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
-    input { padding: 10px; width: 250px; }
-    button { padding: 10px 20px; margin-top: 10px; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f9f9f9;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      margin-bottom: 1rem;
+    }
+    input, button {
+      font-size: 1rem;
+      padding: 0.7rem;
+      margin: 0.5rem 0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      background-color: #0078d7;
+      color: white;
+      border: none;
+      cursor: pointer;
+      width: 150px;
+    }
+    button:disabled {
+      background-color: #999;
+      cursor: not-allowed;
+    }
+    #status {
+      margin-top: 1rem;
+      font-weight: bold;
+      min-height: 1.5rem;
+    }
   </style>
 </head>
 <body>
-  <h2>Enter Voucher Code</h2>
-  <input type="text" id="voucher" placeholder="Voucher Code" />
-  <br />
-  <button onclick="submitVoucher()">Connect</button>
-  <p id="status"></p>
+
+  <h1>WiFi Voucher Login</h1>
+  <input type="text" id="voucher" placeholder="Enter voucher code" autocomplete="off" />
+  <button id="connectBtn" onclick="submitVoucher()">Connect</button>
+  <div id="status"></div>
 
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const clientMac = urlParams.get("clientMac");
-    const clientIp = urlParams.get("clientIp");
-    const site = urlParams.get("site");
-    const redirectUrl = decodeURIComponent(urlParams.get("redirectUrl") || "http://1.1.1.1/");
+    const params = new URLSearchParams(window.location.search);
+    const clientMac = params.get("clientMac");
+    const clientIp = params.get("clientIp");
+    const site = params.get("site");
+    const redirectUrl = decodeURIComponent(params.get("redirectUrl") || "http://1.1.1.1/");
+
+    const statusEl = document.getElementById("status");
+    const connectBtn = document.getElementById("connectBtn");
+    const voucherInput = document.getElementById("voucher");
+
+    function setStatus(message, isError = false) {
+      statusEl.textContent = message;
+      statusEl.style.color = isError ? "red" : "green";
+    }
 
     async function submitVoucher() {
-      const voucher = document.getElementById("voucher").value;
-      const status = document.getElementById("status");
+      setStatus("");
+      const voucher = voucherInput.value.trim();
 
       if (!voucher) {
-        status.textContent = "Please enter a voucher code.";
+        setStatus("Please enter a voucher code.", true);
         return;
       }
-
       if (!clientMac || !clientIp || !site) {
-        status.textContent = "Missing Omada connection parameters.";
+        setStatus("Missing required connection parameters.", true);
         return;
       }
 
-      const formBody = `authType=voucher&voucher=${encodeURIComponent(voucher)}`;
+      connectBtn.disabled = true;
+      setStatus("Connecting...");
+
       const proxyUrl = `https://omada-proxy.christianzemog.workers.dev/?clientMac=${encodeURIComponent(clientMac)}&clientIp=${encodeURIComponent(clientIp)}&site=${encodeURIComponent(site)}`;
 
+      const formBody = `authType=voucher&voucher=${encodeURIComponent(voucher)}`;
+
       try {
-        status.textContent = "Connecting...";
         const response = await fetch(proxyUrl, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
           body: formBody
         });
 
-        const result = await response.json();
-        if (result.errorCode === 0) {
-          status.textContent = "Connected. Redirecting...";
-          window.location.href = redirectUrl;
-        } else {
-          status.textContent = `Error: ${result.msg || "Invalid voucher"}`;
+        const text = await response.text();
+
+        let json;
+        try {
+          json = JSON.parse(text);
+        } catch {
+          setStatus("Unexpected response from server.", true);
+          connectBtn.disabled = false;
+          return;
         }
+
+        if (json.errorCode === 0) {
+          setStatus("Voucher accepted! Redirecting...");
+          setTimeout(() => {
+            window.location.href = redirectUrl;
+          }, 1000);
+        } else {
+          setStatus(`Error: ${json.msg || "Invalid voucher"}`, true);
+          connectBtn.disabled = false;
+        }
+
       } catch (err) {
-        status.textContent = "Network error. Please try again.";
+        setStatus("Network error. Please try again.", true);
+        connectBtn.disabled = false;
       }
     }
   </script>
