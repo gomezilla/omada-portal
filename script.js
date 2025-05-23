@@ -1,11 +1,22 @@
 document.addEventListener('DOMContentLoaded', function () {
   const urlParams = new URLSearchParams(window.location.search);
-  const form = document.getElementById('authForm');
 
-  document.getElementById('clientMac').value = urlParams.get('clientMac') || '';
-  document.getElementById('clientIp').value = urlParams.get('clientIp') || '';
-  document.getElementById('gwAddress').value = urlParams.get('gwAddress') || '';
-  document.getElementById('gwPort').value = urlParams.get('gwPort') || '';
+  const clientMac = urlParams.get('clientMac');
+  const clientIp = urlParams.get('clientIp');
+  const apiDomain = urlParams.get('apiDomain');
+  const httpsPort = urlParams.get('httpsPort');
 
-  form.action = `http://${urlParams.get('gwAddress')}:${urlParams.get('gwPort')}/portal/auth?clientMac=${urlParams.get('clientMac')}&clientIp=${urlParams.get('clientIp')}`;
+  console.log("DEBUG:", { clientMac, clientIp, apiDomain, httpsPort });
+
+  document.getElementById('clientMac').value = clientMac || '';
+  document.getElementById('clientIp').value = clientIp || '';
+  document.getElementById('gwAddress').value = apiDomain || '';
+  document.getElementById('gwPort').value = httpsPort || '';
+
+  if (apiDomain && httpsPort && clientMac && clientIp) {
+    document.getElementById('authForm').action =
+      `https://${apiDomain}:${httpsPort}/portal/auth?clientMac=${clientMac}&clientIp=${clientIp}`;
+  } else {
+    alert("Missing required Omada Cloud parameters in URL.");
+  }
 });
