@@ -62,6 +62,7 @@
   <div class="container">
     <h2>Wi-Fi Voucher Login</h2>
     <form id="authForm" method="POST">
+      <input type="hidden" name="authType" value="voucher" />
       <input type="hidden" id="clientMac" name="clientMac" />
       <input type="hidden" id="clientIp" name="clientIp" />
       <input type="hidden" id="site" name="site" />
@@ -89,8 +90,8 @@
       document.getElementById("clientIp").value = clientIp;
       document.getElementById("site").value = site;
 
-      // Set form action with hardcoded Omada Cloud domain
-      const authUrl = `https://aps1-api-omada-controller.tplinkcloud.com/portal/auth?clientMac=${clientMac}&clientIp=${clientIp}&site=${site}`;
+      // Set form action
+      const authUrl = `https://aps1-api-omada-controller.tplinkcloud.com/portal/auth`;
       document.getElementById("authForm").action = authUrl;
     });
   </script>
