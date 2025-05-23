@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wi-Fi Login</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Welcome to Our Free Wi-Fi</h1>
+    <p>Please enter your voucher code below</p>
+    <form id="authForm" method="post">
+      <input type="text" name="authcode" placeholder="Voucher Code" required>
+      <input type="hidden" name="clientMac" id="clientMac">
+      <input type="hidden" name="clientIp" id="clientIp">
+      <input type="hidden" name="gwAddress" id="gwAddress">
+      <input type="hidden" name="gwPort" id="gwPort">
+      <button type="submit">Connect</button>
+    </form>
+  </div>
+  <script src="script.js"></script>
+</body>
+</html>
