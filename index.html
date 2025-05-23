@@ -7,7 +7,7 @@
   <style>
     body {
       font-family: sans-serif;
-      background: #f7f7f7;
+      background: #f4f4f4;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -25,22 +25,22 @@
 
     h2 {
       text-align: center;
+      margin-bottom: 1rem;
     }
 
     input[type="text"] {
       width: 100%;
-      padding: 0.8rem;
-      margin: 1rem 0;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
       border-radius: 6px;
       border: 1px solid #ccc;
-      font-size: 1rem;
     }
 
     button {
       width: 100%;
-      padding: 0.8rem;
+      padding: 0.75rem;
       background-color: #007bff;
-      color: #fff;
+      color: white;
       border: none;
       border-radius: 6px;
       font-size: 1rem;
@@ -64,6 +64,7 @@
     <form id="authForm" method="POST">
       <input type="hidden" id="clientMac" name="clientMac" />
       <input type="hidden" id="clientIp" name="clientIp" />
+      <input type="hidden" id="site" name="site" />
       <input type="text" name="voucher" placeholder="Enter your voucher code" required />
       <button type="submit">Connect</button>
     </form>
@@ -72,26 +73,24 @@
 
   <script>
     document.addEventListener('DOMContentLoaded', function () {
-      const urlParams = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(window.location.search);
+      const clientMac = params.get("clientMac");
+      const clientIp = params.get("clientIp");
+      const site = params.get("site");
 
-      const apiDomain = urlParams.get("apiDomain");
-      const httpsPort = urlParams.get("httpsPort") || "443";
-      const site = urlParams.get("site");
-      const clientMac = urlParams.get("clientMac");
-      const clientIp = urlParams.get("clientIp");
-
-      if (!apiDomain || !site || !clientMac || !clientIp) {
+      if (!clientMac || !clientIp || !site) {
         document.getElementById("errorMsg").textContent =
           "Missing required Omada Cloud parameters in URL.";
         return;
       }
 
-      // Set hidden values (for good practice)
+      // Set hidden fields
       document.getElementById("clientMac").value = clientMac;
       document.getElementById("clientIp").value = clientIp;
+      document.getElementById("site").value = site;
 
-      // Use current portal's auth endpoint
-      const authUrl = `https://${apiDomain}/portal/auth?clientMac=${clientMac}&clientIp=${clientIp}&site=${site}`;
+      // Set form action with hardcoded Omada Cloud domain
+      const authUrl = `https://aps1-api-omada-controller.tplinkcloud.com/portal/auth?clientMac=${clientMac}&clientIp=${clientIp}&site=${site}`;
       document.getElementById("authForm").action = authUrl;
     });
   </script>
