@@ -1,24 +1,112 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Wi-Fi Login</title>
-  <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Wi-Fi Voucher Login</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f2f2f2;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h2 {
+      margin-bottom: 1.5rem;
+    }
+
+    input[type="text"] {
+      padding: 0.75rem;
+      width: 100%;
+      margin-bottom: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 1rem;
+    }
+
+    button {
+      padding: 0.75rem;
+      width: 100%;
+      background: #007bff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #0056b3;
+    }
+
+    .error {
+      color: red;
+      margin-top: 1rem;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>Welcome to Our Free Wi-Fi</h1>
-    <p>Please enter your voucher code below</p>
-    <form id="authForm" method="post">
-      <input type="text" name="authcode" placeholder="Voucher Code" required>
-      <input type="hidden" name="clientMac" id="clientMac">
-      <input type="hidden" name="clientIp" id="clientIp">
-      <input type="hidden" name="gwAddress" id="gwAddress">
-      <input type="hidden" name="gwPort" id="gwPort">
+    <h2>Wi-Fi Voucher Login</h2>
+    <form id="authForm" method="POST">
+      <input type="hidden" id="clientMac" name="clientMac" />
+      <input type="hidden" id="clientIp" name="clientIp" />
+      <input type="hidden" id="gwAddress" name="gwAddress" />
+      <input type="hidden" id="gwPort" name="gwPort" />
+      <input type="text" name="voucher" placeholder="Enter your voucher code" required />
       <button type="submit">Connect</button>
     </form>
+    <div class="error" id="error"></div>
   </div>
-  <script src="script.js"></script>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const urlParams = new URLSearchParams(window.location.search);
+
+      const clientMac = urlParams.get('clientMac');
+      const clientIp = urlParams.get('clientIp');
+      const redirectUrl = urlParams.get('redirectUrl');
+
+      let gwAddress = '';
+      let gwPort = '8088'; // default Omada gateway port
+
+      // Try to extract gwAddress from redirectUrl
+      if (redirectUrl) {
+        try {
+          const parsedRedirect = new URL(decodeURIComponent(redirectUrl));
+          gwAddress = parsedRedirect.hostname;
+        } catch (e) {
+          console.error("Failed to parse redirectUrl", e);
+        }
+      }
+
+      // Set hidden input values
+      document.getElementById('clientMac').value = clientMac || '';
+      document.getElementById('clientIp').value = clientIp || '';
+      document.getElementById('gwAddress').value = gwAddress || '';
+      document.getElementById('gwPort').value = gwPort || '';
+
+      if (gwAddress && clientMac && clientIp) {
+        const authUrl = `http://${gwAddress}:${gwPort}/portal/auth?clientMac=${clientMac}&clientIp=${clientIp}`;
+        document.getElementById('authForm').action = authUrl;
+      } else {
+        document.getElementById('error').textContent = "Missing required parameters from Omada. Please try reconnecting to Wi-Fi.";
+      }
+    });
+  </script>
 </body>
 </html>
