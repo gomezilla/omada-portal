@@ -61,38 +61,62 @@
 <body>
   <div class="container">
     <h2>Wi-Fi Voucher Login</h2>
-    <form id="authForm" method="POST">
-      <input type="hidden" name="authType" value="voucher" />
-      <input type="hidden" id="clientMac" name="clientMac" />
-      <input type="hidden" id="clientIp" name="clientIp" />
-      <input type="hidden" id="site" name="site" />
-      <input type="text" name="voucher" placeholder="Enter your voucher code" required />
+    <form id="authForm">
+      <input type="text" id="voucherInput" name="voucher" placeholder="Enter your voucher code" required />
       <button type="submit">Connect</button>
     </form>
     <div class="error" id="errorMsg"></div>
   </div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function () {
+    document.getElementById("authForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
       const params = new URLSearchParams(window.location.search);
       const clientMac = params.get("clientMac");
       const clientIp = params.get("clientIp");
       const site = params.get("site");
 
       if (!clientMac || !clientIp || !site) {
-        document.getElementById("errorMsg").textContent =
-          "Missing required Omada Cloud parameters in URL.";
+        document.getElementById("errorMsg").textContent = "Missing required Omada Cloud parameters.";
         return;
       }
 
-      // Set hidden fields
-      document.getElementById("clientMac").value = clientMac;
-      document.getElementById("clientIp").value = clientIp;
-      document.getElementById("site").value = site;
+      const voucher = document.getElementById("voucherInput").value.trim();
 
-      // Set form action
-      const authUrl = `https://aps1-api-omada-controller.tplinkcloud.com/portal/auth`;
-      document.getElementById("authForm").action = authUrl;
+      if (!voucher) {
+        document.getElementById("errorMsg").textContent = "Please enter a voucher code.";
+        return;
+      }
+
+      const url = `https://aps1-api-omada-controller.tplinkcloud.com/portal/auth?clientMac=${encodeURIComponent(clientMac)}&clientIp=${encodeURIComponent(clientIp)}&site=${encodeURIComponent(site)}`;
+
+      const formData = new URLSearchParams();
+      formData.append("authType", "voucher");
+      formData.append("voucher", voucher);
+
+      try {
+        const response = await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: formData.toString()
+        });
+
+        const data = await response.json();
+        console.log("Auth response:", data);
+
+        if (data.errorCode === 0) {
+          // success, redirect user
+          window.location.href = params.get("redirectUrl") || "https://example.com";
+        } else {
+          document.getElementById("errorMsg").textContent = "Login failed: " + (data.msg || "Unknown error");
+        }
+      } catch (err) {
+        console.error(err);
+        document.getElementById("errorMsg").textContent = "Network error occurred.";
+      }
     });
   </script>
 </body>
