@@ -3,121 +3,65 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Omada Wi-Fi Voucher Login</title>
+  <title>Omada Portal Login</title>
   <style>
-    body {
-      font-family: sans-serif;
-      background: #f4f4f4;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .container {
-      background: #fff;
-      padding: 2rem;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-      width: 100%;
-      max-width: 400px;
-    }
-
-    h2 {
-      text-align: center;
-      margin-bottom: 1rem;
-    }
-
-    input[type="text"] {
-      width: 100%;
-      padding: 0.75rem;
-      margin-bottom: 1rem;
-      border-radius: 6px;
-      border: 1px solid #ccc;
-    }
-
-    button {
-      width: 100%;
-      padding: 0.75rem;
-      background-color: #007bff;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      font-size: 1rem;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #0056b3;
-    }
-
-    .error {
-      color: red;
-      text-align: center;
-      margin-top: 1rem;
-    }
+    body { font-family: Arial, sans-serif; text-align: center; margin-top: 100px; }
+    input { padding: 10px; width: 250px; }
+    button { padding: 10px 20px; margin-top: 10px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h2>Wi-Fi Voucher Login</h2>
-    <form id="authForm">
-      <input type="text" id="voucherInput" name="voucher" placeholder="Enter your voucher code" required />
-      <button type="submit">Connect</button>
-    </form>
-    <div class="error" id="errorMsg"></div>
-  </div>
+  <h2>Enter Voucher Code</h2>
+  <input type="text" id="voucher" placeholder="Voucher Code" />
+  <br />
+  <button onclick="submitVoucher()">Connect</button>
+  <p id="status"></p>
 
   <script>
-    document.getElementById("authForm").addEventListener("submit", async function (e) {
-      e.preventDefault();
+    const urlParams = new URLSearchParams(window.location.search);
+    const clientMac = urlParams.get("clientMac");
+    const clientIp = urlParams.get("clientIp");
+    const site = urlParams.get("site");
+    const redirectUrl = decodeURIComponent(urlParams.get("redirectUrl") || "http://1.1.1.1/");
 
-      const params = new URLSearchParams(window.location.search);
-      const clientMac = params.get("clientMac");
-      const clientIp = params.get("clientIp");
-      const site = params.get("site");
-
-      if (!clientMac || !clientIp || !site) {
-        document.getElementById("errorMsg").textContent = "Missing required Omada Cloud parameters.";
-        return;
-      }
-
-      const voucher = document.getElementById("voucherInput").value.trim();
+    async function submitVoucher() {
+      const voucher = document.getElementById("voucher").value;
+      const status = document.getElementById("status");
 
       if (!voucher) {
-        document.getElementById("errorMsg").textContent = "Please enter a voucher code.";
+        status.textContent = "Please enter a voucher code.";
         return;
       }
 
-      const url = `https://aps1-api-omada-controller.tplinkcloud.com/portal/auth?clientMac=${encodeURIComponent(clientMac)}&clientIp=${encodeURIComponent(clientIp)}&site=${encodeURIComponent(site)}`;
+      if (!clientMac || !clientIp || !site) {
+        status.textContent = "Missing Omada connection parameters.";
+        return;
+      }
 
-      const formData = new URLSearchParams();
-      formData.append("authType", "voucher");
-      formData.append("voucher", voucher);
+      const formBody = `authType=voucher&voucher=${encodeURIComponent(voucher)}`;
+      const proxyUrl = `https://omada-proxy.christianzemog.workers.dev/?clientMac=${encodeURIComponent(clientMac)}&clientIp=${encodeURIComponent(clientIp)}&site=${encodeURIComponent(site)}`;
 
       try {
-        const response = await fetch(url, {
+        status.textContent = "Connecting...";
+        const response = await fetch(proxyUrl, {
           method: "POST",
           headers: {
             "Content-Type": "application/x-www-form-urlencoded"
           },
-          body: formData.toString()
+          body: formBody
         });
 
-        const data = await response.json();
-        console.log("Auth response:", data);
-
-        if (data.errorCode === 0) {
-          // success, redirect user
-          window.location.href = params.get("redirectUrl") || "https://example.com";
+        const result = await response.json();
+        if (result.errorCode === 0) {
+          status.textContent = "Connected. Redirecting...";
+          window.location.href = redirectUrl;
         } else {
-          document.getElementById("errorMsg").textContent = "Login failed: " + (data.msg || "Unknown error");
+          status.textContent = `Error: ${result.msg || "Invalid voucher"}`;
         }
       } catch (err) {
-        console.error(err);
-        document.getElementById("errorMsg").textContent = "Network error occurred.";
+        status.textContent = "Network error. Please try again.";
       }
-    });
+    }
   </script>
 </body>
 </html>
